@@ -7,7 +7,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 34
         versionCode 2
-        versionName "2.2024.4"
+        versionName "2.2024.5"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -31,4 +31,5 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.2'
 }

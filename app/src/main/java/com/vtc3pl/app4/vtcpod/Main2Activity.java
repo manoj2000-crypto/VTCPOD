@@ -34,6 +34,7 @@ import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -57,7 +58,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class Main2Activity extends AppCompatActivity {
 
@@ -70,6 +79,8 @@ public class Main2Activity extends AppCompatActivity {
     List<Integer> posb = new ArrayList<Integer>();
     String upLoadServerUri = "https://vtc3pl.com/upload.php";
     private String pictureImagePath = "", drsno = "";
+    private Spinner spinnerDepo;
+    private OkHttpClient client;
     //String upLoadServerUri = "http://subcranial-minuses.000webhostapp.com/upload.php";
 
     @Override
@@ -86,7 +97,7 @@ public class Main2Activity extends AppCompatActivity {
         //String Depo = getIntent().getStringExtra("Depo");
         //TextView txtDepo = findViewById(R.id.txtDepo);
         Spinner spinnerYear = findViewById(R.id.spinnerYear);
-        Spinner spinnerDepo = findViewById(R.id.Depo);
+        spinnerDepo = findViewById(R.id.Depo);
         Spinner spinnerVehicleHO = findViewById(R.id.VehicleHO);
         Spinner spinnerMonth = findViewById(R.id.Month);
 
@@ -98,35 +109,75 @@ public class Main2Activity extends AppCompatActivity {
 
         String[] Year = {"24-25", "25-26", "26-27", "27-28", "28-29", "29-30", "30-31", "31-32"};
 
-        String[] Depo = {"PNA", "NSK", "AKL", "AUR", "SHV", "KOP", "SGN", "NAG", "BRS", "JBL", "PDR", "ISL", "SOL", "SGL", "URL", "ANK", "ASL", "BEL", "BNH", "BRD", "HYD", "IND",
-                "NAG", "JNPT", "TRI", "OZAR", "JLN", "STN", "NAN", "PBN", "AKJ", "BIJ", "KLG", "WGL", "LCK", "JAI", "PCV", "GZB", "BWD", "NRG", "JJR", "BBRM", "SNR", "GWH", "HSR", "PTN", "JSP", "LDH"};
-
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(Main2Activity.this, android.R.layout.simple_spinner_dropdown_item, Year);
-        ArrayAdapter<String> arrayAdapterdepo = new ArrayAdapter<String>(Main2Activity.this, android.R.layout.simple_spinner_dropdown_item, Depo);
         ArrayAdapter<String> arrayAdapterVehicleHO = new ArrayAdapter<>(Main2Activity.this, android.R.layout.simple_spinner_dropdown_item, VehicleHO);
         ArrayAdapter<String> arrayAdapterMonth = new ArrayAdapter<>(Main2Activity.this, android.R.layout.simple_spinner_dropdown_item, Month);
         //attaching adapter to listview
         spinnerYear.setAdapter(arrayAdapter);
         spinnerYear.setSelection(2);
 
-        spinnerDepo.setAdapter(arrayAdapterdepo);
-        spinnerDepo.setSelection(0);
-
         spinnerVehicleHO.setAdapter(arrayAdapterVehicleHO);
         spinnerVehicleHO.setSelection(0);
 
         spinnerMonth.setAdapter(arrayAdapterMonth);
-        spinnerMonth.setSelection(0);
-        //editText1.setKeyListener(DigitsKeyListener.getInstance("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"));
-/*
-        //getting the toolbar
-        Toolbar toolbar = (Toolbar) findViewById(R.id.my_toolbar);
 
-        //setting the title
-        toolbar.setTitle("VTC 3PL");
+        // Get the current month
+        Calendar calendar = Calendar.getInstance();
+        int currentMonth = calendar.get(Calendar.MONTH);
+        Log.e("CurrentMonth", String.valueOf(Calendar.MONTH));
 
-        //placing toolbar in place of actionbar
-        setSupportActionBar(toolbar);*/
+// Map the Calendar month to your custom Month array index
+        int monthIndex;
+        switch (currentMonth) {
+            case Calendar.JANUARY:
+                monthIndex = 9;
+                break;
+            case Calendar.FEBRUARY:
+                monthIndex = 10;
+                break;
+            case Calendar.MARCH:
+                monthIndex = 11;
+                break;
+            case Calendar.APRIL:
+                monthIndex = 0;
+                break;
+            case Calendar.MAY:
+                monthIndex = 1;
+                break;
+            case Calendar.JUNE:
+                monthIndex = 2;
+                break;
+            case Calendar.JULY:
+                monthIndex = 3;
+                break;
+            case Calendar.AUGUST:
+                monthIndex = 4;
+                break;
+            case Calendar.SEPTEMBER:
+                monthIndex = 5;
+                break;
+            case Calendar.OCTOBER:
+                monthIndex = 6;
+                break;
+            case Calendar.NOVEMBER:
+                monthIndex = 7;
+                break;
+            case Calendar.DECEMBER:
+                monthIndex = 8;
+                break;
+            default:
+                monthIndex = 0; // Default to the first month if somehow the current month isn't recognized
+        }
+
+// Set the spinner selection to the current month
+        spinnerMonth.setSelection(monthIndex);
+
+        client = new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build();
+        fetchDepoData();
 
         btn1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -142,22 +193,6 @@ public class Main2Activity extends AppCompatActivity {
         btn2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                /*String str = editText1.getText().toString();
-                if(str.matches(""))
-                {
-                    Toast.makeText(getApplicationContext(),"please enter upload File Name.",Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if(str.length() < 13)
-                {
-                    Toast.makeText(getApplicationContext(),"LR Numnber is incomplete.",Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if(!str.substring(0,2).matches("[a-zA-Z]+") || !str.substring(3,13).matches("[0-9]+"))
-                {
-                    Toast.makeText(getApplicationContext(),"LR Numnber is not in correct Format.",Toast.LENGTH_SHORT).show();
-                    return;
-                }*/
                 Spinner spinner1 = findViewById(R.id.spinner1);
                 if (spinner1.getSelectedItem() == null) {
                     Toast.makeText(getApplicationContext(), "Please Select LR No.", Toast.LENGTH_SHORT).show();
@@ -172,23 +207,6 @@ public class Main2Activity extends AppCompatActivity {
                     return;
                 }
                 dialog = ProgressDialog.show(Main2Activity.this, "", "Uploading file...", true);
-/*                new Thread(new Runnable()
-                {
-                    public void run()
-                    {
-                        runOnUiThread(new Runnable()
-                        {
-                            public void run()
-                            {
-                                Toast.makeText(getApplicationContext(),"Uploading Started ", Toast.LENGTH_SHORT).show();
-                                editText1.setText("");
-                                imageView1.setImageResource(R.drawable.ic_launcher_background);
-                            }
-                        });
-                        uploadFile();
-                        pictureImagePath="";
-                    }
-                }).start();*/
                 BackgroundWorker backgroundWorker = new BackgroundWorker(Main2Activity.this);
                 backgroundWorker.execute();
             }
@@ -211,7 +229,6 @@ public class Main2Activity extends AppCompatActivity {
                 String lastTwoCharsOfYear = yearStr.substring(yearStr.length() - 2);
 
                 String str = vehicleHOStr + monthStr.charAt(monthStr.length() - 1) + depoStr + lastTwoCharsOfYear + editText1.getText().toString();
-                //String str = spinnerDepo.getSelectedItem().toString() + spinnerYear.getSelectedItem().toString() + editText1.getText().toString();
                 if (str.matches("")) {
                     Toast.makeText(getApplicationContext(), "please enter DRS NO.", Toast.LENGTH_LONG).show();
                     return;
@@ -231,17 +248,52 @@ public class Main2Activity extends AppCompatActivity {
         });
     }
 
+    private void fetchDepoData() {
+        Request request = new Request.Builder()
+                .url("https://vtc3pl.com/fetch_depotcode_and_names_for_pod_app.php") // Replace with your PHP file URL
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                runOnUiThread(() -> Toast.makeText(Main2Activity.this, "Failed to fetch Depot data", Toast.LENGTH_SHORT).show());
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    if (response.body() != null) {
+                        try {
+                            String responseBody = response.body().string();
+                            JSONArray jsonArray = new JSONArray(responseBody);
+                            ArrayList<String> depoList = new ArrayList<>();
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                String fullString = jsonArray.getString(i);
+                                String trimmedPart = fullString.split("-")[0].trim(); // Extract and trim the part before "-"
+                                depoList.add(trimmedPart);
+                            }
+                            runOnUiThread(() -> {
+                                ArrayAdapter<String> arrayAdapterDepo = new ArrayAdapter<>(Main2Activity.this, android.R.layout.simple_spinner_dropdown_item, depoList);
+                                Log.e("Values", arrayAdapterDepo.toString());
+                                spinnerDepo.setAdapter(arrayAdapterDepo);
+                            });
+                        } catch (JSONException e) {
+                            runOnUiThread(() -> Toast.makeText(Main2Activity.this, "Failed to parse Depot data", Toast.LENGTH_SHORT).show());
+                        }
+                    } else {
+                        runOnUiThread(() -> Toast.makeText(Main2Activity.this, "Response body is null", Toast.LENGTH_SHORT).show());
+                    }
+                } else {
+                    runOnUiThread(() -> Toast.makeText(Main2Activity.this, "Failed to fetch Depot data", Toast.LENGTH_SHORT).show());
+                }
+            }
+        });
+    }
+
+
     @SuppressLint("MissingSuperCall")
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        /*if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK && data!= null)
-        {
-            Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
-            //saveToInternalStorage(imageBitmap);
-            ImageView imageView1=findViewById(R.id.imageView1);
-            imageView1.setImageBitmap(imageBitmap);
-        }*/
         if (requestCode == 1 && resultCode == RESULT_OK) {
             File imagePath = new File(getFilesDir(), "images");
             File imgFile = new File(imagePath, "temp.jpg");
@@ -251,11 +303,6 @@ public class Main2Activity extends AppCompatActivity {
                 Bitmap newBitmap = scaleDown(myBitmap, 1280, true);
                 ImageView imageView1 = findViewById(R.id.imageView1);
                 imageView1.setVisibility(View.VISIBLE);
-                /*LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                imageView1.setLayoutParams(param);*/
                 imageView1.setImageBitmap(newBitmap);
                 try {
                     FileOutputStream fos = new FileOutputStream(imgFile);
@@ -271,22 +318,9 @@ public class Main2Activity extends AppCompatActivity {
     }
 
     public void uploadFile() {
-        //uploaded=false;
-        /*ContextWrapper cw = new ContextWrapper(getApplicationContext());
-        // path to /data/data/yourapp/app_data/imageDir
-        File directory = cw.getDir("images", Context.MODE_PRIVATE);
-        // Create imageDir
-        File sourceFile =new File(directory,"temp.jpg");
-        //File sourceFile =new File(pictureImagePath);*/
         EditText editText1 = findViewById(R.id.editText1);
 
-        //File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        //String newimg = storageDir.getAbsolutePath() + "/" + editText1.getText()+".jpg";
-
-        //File tempFile = new File(pictureImagePath);
         File sourceFile = new File(pictureImagePath);
-        //tempFile.renameTo(sourceFile);
-        //String fileName = sourceFile.getAbsolutePath();
         String fileName = editText1.getText().toString() + ".jpg";
         HttpURLConnection conn = null;
         DataOutputStream dos = null;
@@ -366,14 +400,7 @@ public class Main2Activity extends AppCompatActivity {
                 serverResponseCode = conn.getResponseCode();
                 String serverResponseMessage = conn.getResponseMessage();
 
-                Log.i("uploadFile", "HTTP Response is : "
-                        + serverResponseMessage + ": " + serverResponseCode);
-                /*if(serverResponseCode==200)
-                {
-                    uploaded =true;
-                }*/
-                //Toast.makeText(getApplicationContext(),"Uploading completed", Toast.LENGTH_LONG).show();
-                //textView1.append("HTTP Response is : " + serverResponseMessage + ": " + serverResponseCode);
+                Log.i("uploadFile", "HTTP Response is : " + serverResponseMessage + ": " + serverResponseCode);
 
                 //close the streams //
                 fileInputStream.close();
@@ -383,68 +410,25 @@ public class Main2Activity extends AppCompatActivity {
                 }
                 ex.printStackTrace();
                 Log.e("Upload file to server", "error: " + ex.getMessage(), ex);
-                //textView1.append("error: " + ex.getMessage());
             } catch (Exception e) {
                 if (dialog != null && dialog.isShowing()) {
                     dialog.dismiss();
                 }
                 e.printStackTrace();
-                //textView1.append("error: " + e.getMessage());
             }
             if (dialog != null && dialog.isShowing()) {
                 dialog.dismiss();
-                //messageText.append("program end");
             }
             Log.i("program", "program end.");
-            //textView1.append("program end");
         } // End else block
     }
 
     private void openCamera() {
-        //EditText editText1 = findViewById(R.id.editText1);
-
-        /*List<Camera.Size> sizes = params.getSupportedPictureSizes();
-        //searches for good picture quality
-        Camera.Size bestDimens = null;
-
-        //int imagesize = Integer.parseInt(editText1.getText().toString());
-
-        for(Camera.Size dimens : sizes)
-        {
-            if(dimens.width  <= 1024 && dimens.height <= 1024)
-            {
-                if (bestDimens == null || (dimens.width > bestDimens.width && dimens.height > bestDimens.height))
-                {
-                    bestDimens = dimens;
-                }
-            }
-        }
-        params.setPictureSize(bestDimens.width, bestDimens.height);
-        camera.setParameters(params);*/
-        //Camera.Parameters parameters = camera.getParameters();
-        //parameters.set("orientation", "landscape");
-        //camera.setParameters(parameters);
-        //String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        //String imageFileName = "temp"+timeStamp+".jpg";
-        //File storageDir = Environment.getDataDirectory();
-        //File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        //pictureImagePath = storageDir.getAbsolutePath() + "Pictures/temp.jpg";
-
-        /*File file = new File(getFilesDir(),"temp.jpg");
-        file.delete();
-        //Create new file
-        FileOutputStream fos = openFileOutput( "temp.jpg", Context.MODE_WORLD_WRITEABLE);
-        fos.close();
-        file = new File(getFilesDir(),"temp.jpg");
-        pictureImagePath=file.getAbsolutePath();*/
         //Get reference to the file
         File imagePath = new File(getFilesDir(), "images");
         if (!imagePath.exists())
             imagePath.mkdir();
         File file = new File(imagePath, "temp.jpg");
-        //File file = File.createTempFile("temp", ".jpg", imagePath);
-
-        //pictureImagePath = file.getAbsolutePath();
 
         if (file != null) {
             final Uri outputFileUri = getUriForFile(getApplicationContext(), "com.vtc3pl.app4.vtcpod.fileprovider", file);
@@ -681,11 +665,6 @@ public class Main2Activity extends AppCompatActivity {
                     bufferedReader.close();
                     inputStream.close();
                     conn.disconnect();
-                    /*if(serverResponseCode==200)
-                    {
-                        result = serverResponseMessage;
-                     //result="Successfully Uploaded Photo.";
-                    }*/
                     //close the streams //
                     fileInputStream.close();
                 } catch (MalformedURLException ex) {
@@ -779,13 +758,6 @@ public class Main2Activity extends AppCompatActivity {
                 }
                 //imageView1.setImageResource(R.drawable.ic_launcher_background);
                 imageView1.setImageDrawable(null);
-                //imageView1.setVisibility(View.INVISIBLE);
-                /*LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                imageView1.setLayoutParams(param);
-                imageView1.requestLayout();*/
             }
         }
 

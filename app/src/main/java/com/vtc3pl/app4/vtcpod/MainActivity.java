@@ -18,7 +18,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -31,6 +35,14 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences loginPreferences;
     private SharedPreferences.Editor loginPrefsEditor;
     private Boolean saveLogin;
+    private Spinner dropdown;
+    private OkHttpClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Button btnLogin = findViewById(R.id.btnLogin);
         Button btnE = findViewById(R.id.btnE);
-        Spinner dropdown = findViewById(R.id.spinnerDepo);
+        dropdown = findViewById(R.id.spinnerDepo);
         ImageView imageView1 = findViewById(R.id.imageView1);
         imageView1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -63,115 +77,50 @@ public class MainActivity extends AppCompatActivity {
         CheckBox chkR = findViewById(R.id.chkR);
 
         saveLogin = loginPreferences.getBoolean("saveLogin", false);
-        if (saveLogin == true) {
+        if (saveLogin) {
             txtUsername.setText(loginPreferences.getString("username", ""));
             txtPassword.setText(loginPreferences.getString("password", ""));
-            dropdown.setSelection(loginPreferences.getInt("Depo", 0));
+//            dropdown.setSelection(loginPreferences.getInt("Depo", 0));
             chkR.setChecked(true);
         }
 
-        //the array adapter to load data into list
-        String[] Depo = {"Please Select Depo",
-                "PNA-PUNE",
-                "NSK-NASHIK",
-                "AKL-AKOLA",
-                "AUR-AURANGABAD",
-                "SHV-SHIVARI",
-                "KOP-KOLHAPUR",
-                "SGN-SANGAMNER",
-                "NAG-NAGPUR",
-                "BRS-BARSHI",
-                "JBL-JABALPUR",
-                "PDR-PANDHARPUR",
-                "ISL-ISLAMPUR",
-                "SOL-SOLAPUR",
-                "SGL-SANGLI",
-                "URL-URULIDEVACHI",
-                "ANK-ANKLESHWAR",
-                "ASL-ASLALI",
-                "BEL-BELLARY",
-                "BNH-BANGLORE",
-                "BRD-BARODA",
-                "HYD-HYDERABAD",
-                "IND-INDORE",
-                "NAG-NAGPUR",
-                "JNPT-NAVA-SHIVA",
-                "TRI-TRICHY",
-                "OZAR-OZAR",
-                "JLN-JALNA",
-                "STN-SATPUR NASHIK",
-                "NAN-NANDED",
-                "PBN-PARBHANI",
-                "AKJ-AKLUJ",
-                "BIJ-BAIJAPUR",
-                "KLG-KHALGHAT DHAR",
-                "WGL-WAGHOLI",
-                "LCK-LUCKNOW",
-                "JAI-JAIPUR",
-                "PCV-PANCHAVATI NASHIK",
-                "GZB-GHAZIABAD UP",
-                "BWD-BHIWANDI THANE",
-                "GNT-GUNTUR",
-                "BBRD-BARAMATI",
-                "HDD-HANDEWADI",
-                "NRG-NARAYANGAON",
-                "JJR-JEJURI",
-                "BBRM-BARAMATI",
-                "SNR-SINNER",
-                "GWH-GUWAHATI",
-                "HSR-HISSAR",
-                "PTN-PATNA",
-                "JSP-JAMSHEDPUR",
-                "LDH-LUDHIANA",
-        };
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, Depo) {
+        client = new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build();
+
+        ArrayList<String> depoList = new ArrayList<>();
+        depoList.add("Select Depot"); // Adding a default value for the first item
+
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, depoList) {
             @Override
             public boolean isEnabled(int position) {
-                if (position == 0) {
-                    // Disable the First item from Spinner
-                    return false;
-                } else {
-                    return true;
-                }
+                return position != 0; // Disable the first item
             }
 
             @Override
-            public View getDropDownView(int position, View convertView,
-                                        ViewGroup parent) {
+            public View getDropDownView(int position, View convertView, @NonNull ViewGroup parent) {
                 View view = super.getDropDownView(position, convertView, parent);
                 TextView tv = (TextView) view;
-                if (position == 0) {
-                    // Set the disable item text color
-                    tv.setTextColor(Color.RED);
-                } else {
-                    tv.setTextColor(Color.BLACK);
-                }
+                tv.setTextColor(position == 0 ? Color.RED : Color.BLACK);
                 return view;
             }
         };
         //attaching adapter to listview
         dropdown.setAdapter(arrayAdapter);
-
-        dropdown.setSelection(loginPreferences.getInt("Depo", 0));
+//        dropdown.setSelection(loginPreferences.getInt("Depo", 0));
+        fetchDepoData(arrayAdapter);
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                /*Spinner dropdown = findViewById(R.id.spinnerDepo);
-                Intent myIntent = new Intent(MainActivity.this, Main2Activity.class);
-                myIntent.putExtra("Depo", dropdown.getSelectedItem().toString());
-                startActivity(myIntent);*/
-
-                EditText txtUsername = findViewById(R.id.txtUsername);
-                EditText txtPassword = findViewById(R.id.txtPassword);
-                String type = "login";
-                Spinner spinnerDepo = findViewById(R.id.spinnerDepo);
-                if (spinnerDepo.getSelectedItemPosition() == 0) {
+                if (dropdown.getSelectedItemPosition() == 0) {
                     Toast.makeText(getApplicationContext(), "Please Select Depo", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 BackgroundWorker backgroundWorker = new BackgroundWorker();
-                backgroundWorker.execute(type, txtUsername.getText().toString(), txtPassword.getText().toString());
+                backgroundWorker.execute("login", txtUsername.getText().toString(), txtPassword.getText().toString());
             }
         });
 
@@ -180,6 +129,52 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent myIntent = new Intent(MainActivity.this, Main3Activity.class);
                 startActivity(myIntent);
+            }
+        });
+    }
+
+    private void fetchDepoData(ArrayAdapter<String> arrayAdapter) {
+        Request request = new Request.Builder()
+                .url("https://vtc3pl.com/fetch_depotcode_and_names_for_pod_app.php") // Replace with your PHP file URL
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Failed to fetch Depot data", Toast.LENGTH_SHORT).show());
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    if (response.body() != null) {
+                        try {
+                            String responseBody = response.body().string();
+                            JSONArray jsonArray = new JSONArray(responseBody);
+                            ArrayList<String> fetchedDepoList = new ArrayList<>();
+                            fetchedDepoList.add("Select Depot"); // Adding a default value for the first item
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                fetchedDepoList.add(jsonArray.getString(i));
+                            }
+                            runOnUiThread(() -> {
+                                arrayAdapter.clear();
+                                arrayAdapter.addAll(fetchedDepoList);
+                                arrayAdapter.notifyDataSetChanged();
+                                // Ensure dropdown selection is set after data is loaded
+                                int savedDepoPosition = loginPreferences.getInt("Depo", 0);
+                                if (savedDepoPosition < fetchedDepoList.size()) {
+                                    dropdown.setSelection(savedDepoPosition);
+                                }
+                            });
+                        } catch (JSONException e) {
+                            runOnUiThread(() -> Toast.makeText(MainActivity.this, "Failed to parse Depot data", Toast.LENGTH_SHORT).show());
+                        }
+                    } else {
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "Response body is null", Toast.LENGTH_SHORT).show());
+                    }
+                } else {
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Failed to fetch Depot data", Toast.LENGTH_SHORT).show());
+                }
             }
         });
     }
