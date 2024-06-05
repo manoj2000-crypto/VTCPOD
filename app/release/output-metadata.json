@@ -1,0 +1,21 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "com.vtc3pl.app4.vtcpod",
+  "variantName": "release",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 2,
+      "versionName": "2.2024.4",
+      "outputFile": "app-release.apk"
+    }
+  ],
+  "elementType": "File",
+  "minSdkVersionForDexing": 19
+}

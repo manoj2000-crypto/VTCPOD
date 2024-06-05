@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- See table below.  The external-files-path DOES NOT require external storage permissions. -->
+    <root-path name="root" path="." />
+    <files-path name="images" path="images/" />
+    <!--path="Android/data/com.vtc3pl.app1.cameracapture/files/images" /> -->
+    <!--Uncomment below to share the entire application specific directory -->
+    <!--<external-path name="all_dirs" path="."/>-->
+</paths>
